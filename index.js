@@ -232,6 +232,8 @@ function ready(error, data, links, jsonData, selectedIndex) {
   var map = gridMap.selectAll(".map")
     .data(selectPub.values, function(d) { return d.code; });
 
+  var maxyval = getmaxyval(selectedIndex,jsonData);
+
   // graphs for each state
   map.enter()
     .append("svg")
@@ -239,7 +241,7 @@ function ready(error, data, links, jsonData, selectedIndex) {
         var color = getColor(d.state); //determines appropriate color based on preloaded csv file
         x = ((d.col - 1) * cellSize);
         y = ((d.row - 1) * cellSize);
-        populate(x, y, d.state, color, selectedIndex, jsonData);
+        populate(x, y, d.state, color, selectedIndex, jsonData, maxyval);
       })
   }
 };
@@ -661,11 +663,40 @@ function calcCellSize(w, h, ncol, nrow) {
   return cellSize;
 }
 
+function getmaxyval(selectedIndex, data) {
+  var maxyval=0;
+  if(selectedIndex == 'Daily New Cases'){
+    data.forEach(function(d) {
+      var maxystate = Math.max(...d.avg_cases);
+      if (maxyval < maxystate) {
+        maxyval = maxystate;
+      }
+    });
+  }
+  else if(selectedIndex == 'Daily New Deaths'){
+    data.forEach(function(d) {
+      var maxystate = Math.max(...d.avg_deaths);
+      if (maxyval < maxystate) {
+        maxyval = maxystate;
+      }
+    });
+  }
+  else if(selectedIndex == 'Current Hospitalizations'){
+    data.forEach(function(d) {
+      var maxystate = Math.max(...d.avg_hospitalizations);
+      if (maxyval < maxystate) {
+        maxyval = maxystate;
+      }
+    });
+  }
+  return maxyval;
+}
+
 /*
 * populate: generates graph for state given and translates axes and coordinates
 *           based on x y position
 */
-function populate(x, y, state, color, selectedIndex, data){
+function populate(x, y, state, color, selectedIndex, data, maxyval){
   const dataset = [];
   if(selectedIndex == 'Daily New Cases'){
     //determine index from JSON corresponding to state name
@@ -706,9 +737,9 @@ function populate(x, y, state, color, selectedIndex, data){
     .domain(d3.extent(dataset, function(d) { return d.x; }))
     .range([0,w]); //taking into account margins
 
-  // setting linear scale for y axis based on max value
+  // setting linear scale for y axis based on max y value of all graphs
   var yScale = d3.scaleLinear()
-    .domain([0, d3.max(dataset, function (d) { return d.y + 1; })])
+    .domain([0, maxyval])
     .range([h, margin.top]);
 
   var xAxis = d3.axisBottom(xScale).tickValues([]).tickSizeOuter(0);
