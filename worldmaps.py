@@ -39,66 +39,89 @@ us_states = ["Alaska", "Alabama", "Arkansas", "American Samoa", "Arizona", "Cali
             "Vermont", "Washington", "Wisconsin", "West Virginia", "Wyoming"]
 
 new_hospitalizations = []
-#state_code = dict(zip(us_states,us_states_codes))
 datesHospitalizations = []
+# Create a set for easy checking
+state_set = set(us_states)
 
 usa_url = worldometers + "/coronavirus/country/us/"
+state_urls={}
 page = requests.get(usa_url)
 tree = html.fromstring(page.content)
 
-results = []
+json_out = []
 
-# Create a set for easy checking
-state_set = set(us_states)
+def splitdata(in_data=[]):
+  out_data = []
+  for d in in_data:
+    if d == "null":
+      out_data.append(None)
+    else:
+      try:
+        out_data.append(float(d))
+      except ValueError:
+        out_data.append(d)
+  return out_data
+
+
 for state in tree.xpath("//table[@id='usa_table_countries_yesterday']/tbody/tr/td/a[@class='mt_a']"):
-  if state.text_content() in state_set:
-    state_dict = {"state":state.text_content(), "dates": [], "new_cases": [], "avg_cases": [], "new_deaths": [], "avg_deaths": [], "hospDates": [], "new_hospitalizations": [], "avg_hospitalizations": []}
-    #try:
-    state_page = requests.get(worldometers + state.get('href'))
+  state_name = state.text_content() 
+  if state_name in state_set:
+    state_dict = {"state":state_name, "dates": [], "new_cases": [], "avg_cases": [], "new_deaths": [], "avg_deaths": [], "hospDates": [], "new_hospitalizations": [], "avg_hospitalizations": []}
+    state_url = worldometers + state.get('href')
+    state_urls[state_name] = state_url
+    state_page = requests.get(state_url)
     state_tree = html.fromstring(state_page.content)
     for script in state_tree.xpath("//div[@class='col-md-12']/script"):
       script_text = script.text_content()
       if re.search("Highcharts\\.chart\\('graph-cases-daily', {",script_text):
         script_text = re.sub("responsive:.*","",script_text,flags=re.DOTALL) # clip anything past this because data repeats
         m = re.search("categories: \\[\"([\"\\w\\s,]*)\"\\]",script_text)
-        dates = re.split('","',m.group(1))
+        dates = splitdata(re.split('","',m.group(1)))
         for n, d in enumerate(dates):
           state_dict["dates"].append(datetime.strptime(d + " 2020", '%b %d %Y').date().isoformat())
-        matches = re.findall("name:\s*'([\w\s-]*)',[^}]*data:\s*\\[([\"\\w\\s,]*)\\]",script_text,flags = re.DOTALL)
+        matches = re.findall("name:\s*'([\w\s-]*)',[^}]*data:\s*\\[([\"\\w\\s,-]*)\\]",script_text,flags = re.DOTALL)
         for m in matches:
           name = m[0]
-          data = re.split(',',m[1])
+          data = splitdata(re.split(',',m[1]))
           if name == "Daily Cases":
             state_dict["new_cases"] = data 
           elif name == "7-day moving average":
             state_dict["avg_cases"] = data 
-          #print (name + ": " + dates[3] + " : " + data[3])
       if re.search("Highcharts\\.chart\\('graph-deaths-daily', {",script_text):
         script_text = re.sub("responsive:.*","",script_text,flags=re.DOTALL) # clip anything past this because data repeats
         m = re.search("categories: \\[\"([\"\\w\\s,]*)\"\\]",script_text)
-        dates = re.split('","',m.group(1))
+        dates = splitdata(re.split('","',m.group(1)))
         death_dates=[]
         for n, d in enumerate(dates):
           death_dates.append(datetime.strptime(d + " 2020", '%b %d %Y').date().isoformat())
         if death_dates != state_dict["dates"]:
           raise Exception("Death and Infection dates do not match")
-        matches = re.findall("name:\s*'([\w\s-]*)',[^}]*data:\s*\\[([\"\\w\\s,]*)\\]",script_text,flags = re.DOTALL)
+        state_dict["death_dates"] = death_dates
+        matches = re.findall("name:\s*'([\w\s-]*)',[^}]*data:\s*\\[([\"\\w\\s,-]*)\\]",script_text,flags = re.DOTALL)
         for m in matches:
           name = m[0]
-          data = re.split(',',m[1])
+          data = splitdata(re.split(',',m[1]))
           if name == "Daily Deaths":
             state_dict["new_deaths"] = data 
           elif name == "7-day moving average":
             state_dict["avg_deaths"] = data 
-          #print (name + ": " + dates[3] + " : " + data[3])
-    #except None as err:
-      #print ("Couldn't load page for " + state.text_content() + ": ", end='')
-      #print (err)
-      #print (worldometers + state.get('href'))
+          elif name == "3-day moving average":
+            state_dict["avg_deaths_3"] = data 
+          else:
+            raise Exception("Unknown dataset " + name)
+    json_out.append(state_dict)
 
-    results.append(state_dict)
-
-#json.dump(results,sys.stdout)
+# Write as json
 with open('result.json', 'w') as fp:
-    json.dump(results, fp)
+    json.dump(json_out, fp)
+
+
+# Write as csv
+# maybe this could be better with pandas
+with open('result.csv', 'w') as csvfile:
+  resultwriter = csv.writer(csvfile, delimiter=",")
+  resultwriter.writerow(["state","date","new_cases","avg_cases","new_deaths","avg_deaths"])
+  for state_dict in json_out:
+    for i,date in enumerate(state_dict["dates"]):
+      resultwriter.writerow([state_dict["state"], date, state_dict["new_cases"][i], state_dict["avg_cases"][i], state_dict["new_deaths"][i], state_dict["avg_deaths"][i]])
 
