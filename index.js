@@ -1,7 +1,7 @@
 // Created by Era Iyer
 // May 2020
 // index.js file
-// generates state line chart graph using d3 library 
+// generates state line chart graph using d3 library
 // resources: https://bl.ocks.org/officeofjane/2c3ed88c4be050d92765de912d71b7c4 for US grid
 
 
@@ -41,15 +41,15 @@ d3.select("#vis")
   .attr("align","center");
 
 /*
-* indexSelected: determines index selected from dropdown, calls function to create US map grid,  
-* and preloads json data for efficiency 
+* indexSelected: determines index selected from dropdown, calls function to create US map grid,
+* and preloads json data for efficiency
 */
 function indexSelected() {
   margin = {top:20, right:20, bottom:20, left:20};
   var x = document.getElementById("selectButton").selectedIndex;
   var y = document.getElementById("selectButton").options;
 
-  d3.selectAll("#vis > *").remove(); 
+  d3.selectAll("#vis > *").remove();
   svg = d3.select("#vis")
     .append("svg")
     .attr("width", width + margin.left + margin.right)
@@ -57,7 +57,7 @@ function indexSelected() {
 
   grid = svg.append("g")
     .attr("class", "gridlines")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");  
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     var row = grid.selectAll(".row")
     .data(gridData)
     .enter()
@@ -69,17 +69,17 @@ function indexSelected() {
     .enter()
     .append("rect")
     .attr("class", "cell")
-    .attr("x", function(d) { return d.x; }) 
+    .attr("x", function(d) { return d.x; })
     .attr("y", function(d) { return d.y; })
     .attr("width", function(d) { return d.width; })
     .attr("height", function(d) { return d.height; })
     .style("fill", "white");
-    
+
   gridMap = svg.append("g")
     .attr("class", "gridmap")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-    
-  // preloading csv files and json data as parameters for the function 'ready' 
+
+  // preloading csv files and json data as parameters for the function 'ready'
   setTimeout(function() {
       // load json data and trigger callback
       d3.json("./result.json", function(data) {
@@ -112,7 +112,7 @@ function ready(error, data, links, jsonData, selectedIndex) {
   var nest = d3.nest()
     .key(function(d) { return d.publication; })
     .entries(data);
-  
+
   // drawing grid map
   drawGridMap(links[0].publication);
 
@@ -142,16 +142,16 @@ function ready(error, data, links, jsonData, selectedIndex) {
     .attr("y", function(d) { return (d.row - 1) * cellSize; })
     .attr("width", cellSize)
     .attr("height", cellSize)
-    
+
     .on("click", function(d) {
       var square = d3.select(this);
       square.classed("active", !square.classed("active"));
-      if (square.classed("active")) {  
+      if (square.classed("active")) {
         if(selectedIndex != 'Current Hospitalizations' || (d.state != 'Florida' && d.state != 'Kansas' && d.state != 'Hawaii')){
         //if(selectedIndex == 'Current Hospitalizations' && (d.state == 'Kansas' || d.state == 'Hawaii')){
-          let color = getColor(d.state); //determines appropriate color based on id 
-          popUpGraph(d.state, color, selectedIndex, jsonData);      
-        }                       
+          let color = getColor(d.state); //determines appropriate color based on id
+          popUpGraph(d.state, color, selectedIndex, jsonData);
+        }
       }
     });
 
@@ -169,14 +169,14 @@ function ready(error, data, links, jsonData, selectedIndex) {
       return ((d.row - 1) * cellSize) + (cellSize*0.3);
     })
     .style("text-anchor", "start")
-    .text(function(d) { 
-      return d.code; 
+    .text(function(d) {
+      return d.code;
     });
-        
+
 
   var specialLabelsNot = gridMap.selectAll(".specialLabelsNot")
     .data(selectPub.values, function(d) { return d.code; });
-  
+
   specialLabelsNot.enter()
     .append("text")
     .attr("x", function(d) {
@@ -193,10 +193,10 @@ function ready(error, data, links, jsonData, selectedIndex) {
       else if(width < 1000 || height < 800){ return "10px" }
       else{ return "12px" }
     })
-    .text(function(d) { 
+    .text(function(d) {
       if(selectedIndex == 'Current Hospitalizations' && (d.state == 'Florida' || d.state == 'Kansas' || d.state == 'Hawaii')){
       //if(selectedIndex == 'Current Hospitalizations' && (d.state == 'Kansas' || d.state == 'Hawaii')){
-        return "Not"; 
+        return "Not";
       }
       else return;
     });
@@ -220,11 +220,11 @@ function ready(error, data, links, jsonData, selectedIndex) {
       else if(width < 1000 || height < 800){ return "10px" }
       else{ return "12px" }
     })
-    .text(function(d) { 
+    .text(function(d) {
       if(selectedIndex == 'Current Hospitalizations' && (d.state == 'Florida' || d.state == 'Kansas' || d.state == 'Hawaii')){
       //if(selectedIndex == 'Current Hospitalizations' && (d.state == 'Kansas' || d.state == 'Hawaii')){
 
-        return "Reported"; 
+        return "Reported";
       }
       else return;
     });
@@ -232,14 +232,14 @@ function ready(error, data, links, jsonData, selectedIndex) {
   var map = gridMap.selectAll(".map")
     .data(selectPub.values, function(d) { return d.code; });
 
-  // graphs for each state 
+  // graphs for each state
   map.enter()
     .append("svg")
-      .attr("stateMap", function(d) {           
+      .attr("stateMap", function(d) {
         var color = getColor(d.state); //determines appropriate color based on preloaded csv file
         x = ((d.col - 1) * cellSize);
         y = ((d.row - 1) * cellSize);
-        populate(x, y, d.state, color, selectedIndex, jsonData);            
+        populate(x, y, d.state, color, selectedIndex, jsonData);
       })
   }
 };
@@ -257,7 +257,7 @@ function getColor(state){
 }
 
 /*
-* popUpGraph: takes in stateName and generates Modal with graph of 
+* popUpGraph: takes in stateName and generates Modal with graph of
 *             the state selected
 */
 function popUpGraph(stateName, color, selectedIndex, data) {
@@ -269,25 +269,25 @@ function popUpGraph(stateName, color, selectedIndex, data) {
   //if 'x' button clicled, hide modal and reset g_svg
   span.onclick = function() {
     modal.style.display = "none";
-    d3.selectAll("#graphModal > *").remove(); 
+    d3.selectAll("#graphModal > *").remove();
     g_svg = d3.select("#graphModal")
       .append("svg")
       .attr("width", width + margin.left + margin.right)
       .attr("height", height + margin.top + margin.bottom)
       .attr("align","center");
-    d3.selectAll("#graphTitle > *").remove(); 
+    d3.selectAll("#graphTitle > *").remove();
   }
   //if non-modal section clicled, hide modal and reset g_svg
   window.onclick = function(event) {
     if (event.target == modal) {
       modal.style.display = "none";
-      d3.selectAll("#graphModal > *").remove(); 
+      d3.selectAll("#graphModal > *").remove();
       g_svg = d3.select("#graphModal")
       .append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
       .attr("align","center");
-      d3.selectAll("#graphTitle > *").remove(); 
+      d3.selectAll("#graphTitle > *").remove();
     }
   }
 
@@ -307,7 +307,7 @@ function popUpGraph(stateName, color, selectedIndex, data) {
     var index = data.findIndex(obj => obj.state==stateName);
     for(var i = 0; i < data[index].dates.length; i++){
       //pushes date and value into array, similar to x, y coordinates on a graph
-      dataset.push({ x : d3.timeParse("%Y-%m-%d")(data[index].dates[i]), y : data[index].new_cases[i] }); 
+      dataset.push({ x : d3.timeParse("%Y-%m-%d")(data[index].dates[i]), y : data[index].new_cases[i] });
     }
     yAxisLabel = 'Daily New Cases';
     hoverOverText = ' new cases on ';
@@ -318,7 +318,7 @@ function popUpGraph(stateName, color, selectedIndex, data) {
     // state = data[selectedIndex].state;
     for(var i = 0; i < data[index].dates.length; i++){
       //pushes date and value into array, similar to x, y coordinates on a graph
-      dataset.push({ x : d3.timeParse("%Y-%m-%d")(data[index].dates[i]), y : data[index].new_deaths[i] }); 
+      dataset.push({ x : d3.timeParse("%Y-%m-%d")(data[index].dates[i]), y : data[index].new_deaths[i] });
     }
     yAxisLabel = 'Daily New Deaths';
     hoverOverText = ' new deaths on ';
@@ -328,7 +328,7 @@ function popUpGraph(stateName, color, selectedIndex, data) {
     var index = data.findIndex(obj => obj.state==stateName);
     for(var i = 0; i < data[index].hospDates.length; i++){
       //pushes date and value into array, similar to x, y coordinates on a graph
-      dataset.push({ x : d3.timeParse("%Y-%m-%d")(data[index].hospDates[i]), y : data[index].new_hospitalizations[i] }); 
+      dataset.push({ x : d3.timeParse("%Y-%m-%d")(data[index].hospDates[i]), y : data[index].new_hospitalizations[i] });
     }
     yAxisLabel = 'Patients Hospitalized';
     hoverOverText = ' patients in the hospital on ';
@@ -371,11 +371,11 @@ var yAxis = d3.axisLeft()
       else{ return "14px"; }
     })
     .style("text-anchor", "middle")
-    .text(yAxisLabel);      
+    .text(yAxisLabel);
 
-  
+
   d3.select("#graphTitle").append("text")
-  .attr("transform", "translate(" + (w/2) + " ," + 
+  .attr("transform", "translate(" + (w/2) + " ," +
                       (20) + ")")
   .style("text-anchor", "middle")
   .text(stateName)
@@ -421,7 +421,7 @@ var yAxis = d3.axisLeft()
       .style("left",(d3.event.pageX) + "px")
       .style("top", (d3.event.pageY) + "px")
       .style("padding", "3px")
-      .style("padding-bottom", "15px");        
+      .style("padding-bottom", "15px");
     })
     .on('mouseout', function (d, i) {
       d3.select(this).transition()
@@ -431,7 +431,7 @@ var yAxis = d3.axisLeft()
         .duration('200')
         .style("opacity",0)
     });
-  
+
 
 
 
@@ -444,13 +444,13 @@ var yAxis = d3.axisLeft()
   //   .attr("d", line);
 
 
-  //opening json file to read data only from the selected index 
-    // setting time scale for x axis based on dates  
+  //opening json file to read data only from the selected index
+    // setting time scale for x axis based on dates
   /*var xScale = d3.scaleTime()
     .domain(d3.extent(dataset, function(d) { return d.x; }))
     .range([padding, w - padding]); //taking into account margins
 
-  // setting linear scale for y axis based on max value 
+  // setting linear scale for y axis based on max value
   var yScale = d3.scaleLinear()
     .domain([0, d3.max(dataset, function (d) { return d.y; })])
     .range([h, padding*0.2]);
@@ -483,11 +483,11 @@ var yAxis = d3.axisLeft()
       else{ return "14px"; }
     })
     .style("text-anchor", "middle")
-    .text(yAxisLabel);      
+    .text(yAxisLabel);
 
-  
+
   d3.select("#graphTitle").append("text")
-  .attr("transform", "translate(" + (w/2) + " ," + 
+  .attr("transform", "translate(" + (w/2) + " ," +
                       (20) + ")")
   .style("text-anchor", "middle")
   .text(stateName)
@@ -495,11 +495,11 @@ var yAxis = d3.axisLeft()
     if(width < 300 || height < 400){ return "16px"; }
     else{ return "24px"; }
   });
-      
+
     // //add title to graph
-    // g_svg.append("text")     
+    // g_svg.append("text")
     //   .attr("transform",
-    //           "translate(" + (w/2) + " ," + 
+    //           "translate(" + (w/2) + " ," +
     //                       (10) + ")")
     //   .style("text-anchor", "middle")
     //   .text(stateName)
@@ -512,10 +512,10 @@ var yAxis = d3.axisLeft()
     //       return "24px";
     //     }
     //   })
-    //   .style("fill", "#696969");    
-    
-  
-    //draw line and path 
+    //   .style("fill", "#696969");
+
+
+    //draw line and path
   const line = d3.line()
     .x(function(d) { return xScale(d.x) })
     .y(function(d) { return yScale(d.y) })
@@ -527,7 +527,7 @@ var yAxis = d3.axisLeft()
     .attr("stroke", color)
     .attr("stroke-width", 1)
     .attr("d", line)
-      
+
   const area = d3.area()
     .x(function(d) { return xScale(d.x); })
     .y0(h)
@@ -552,7 +552,7 @@ var yAxis = d3.axisLeft()
     .style("border-radius", "3px")
     .style("opacity", 0);
 
-  //place dots to represent all x y coordinates 
+  //place dots to represent all x y coordinates
   g_svg
     .append("g")
     .selectAll("dot")
@@ -578,7 +578,7 @@ var yAxis = d3.axisLeft()
         .style("left", (d3.event.pageX) + "px")
         .style("top", (d3.event.pageY) + "px")
         .style("padding", "3px")
-        .style("padding-bottom", "15px");        
+        .style("padding-bottom", "15px");
       })
       .on('mouseout', function (d, i) {
         d3.select(this).transition()
@@ -601,13 +601,13 @@ function fillArr(){
     }
   });
 }
- 
+
 /*
 * gridData: function that generates a nested array for square grid
 */
 function gridData(ncol, nrow, cellsize) {
   var gridData = [];
-  var xpos = 1;  // starting xpos and ypos at 1 so the stroke will show when we make the grid below 
+  var xpos = 1;  // starting xpos and ypos at 1 so the stroke will show when we make the grid below
   var ypos = 1;
 
   // calculate width and height of the cell based on width and height of the canvas
@@ -616,7 +616,7 @@ function gridData(ncol, nrow, cellsize) {
   // iterate for rows
   for (var row = 0; row < nrow; row++) {
     gridData.push([]);
-    
+
     // iterate for cells/columns inside each row
     for (var col = 0; col < ncol; col++) {
       gridData[row].push({
@@ -625,11 +625,11 @@ function gridData(ncol, nrow, cellsize) {
         width: cellSize,
         height: cellSize
       });
-      
+
       // increment x position (moving over by 50)
       xpos += cellSize;
     }
-    
+
     // reset x position after a row is complete
     xpos = 1;
     // increment y position (moving down by 50)
@@ -670,24 +670,30 @@ function populate(x, y, state, color, selectedIndex, data){
   if(selectedIndex == 'Daily New Cases'){
     //determine index from JSON corresponding to state name
     var index = data.findIndex(obj => obj.state==state);
-    for(var i = 0; i < data[index].dates.length; i++){
-      //pushes date and value into array, similar to x, y coordinates on a graph
-      dataset.push({ x : d3.timeParse("%Y-%m-%d")(data[index].dates[i]), y : data[index].avg_cases[i] }); 
+    if (index >= 0) {
+      for(var i = 0; i < data[index].dates.length; i++){
+        //pushes date and value into array, similar to x, y coordinates on a graph
+        dataset.push({ x : d3.timeParse("%Y-%m-%d")(data[index].dates[i]), y : data[index].avg_cases[i] });
+      }
     }
   }
   else if(selectedIndex == 'Daily New Deaths'){
     //determine index from JSON corresponding to state name
     var index = data.findIndex(obj => obj.state==state);
-    for(var i = 0; i < data[index].dates.length; i++){
-      //pushes date and value into array, similar to x, y coordinates on a graph
-      dataset.push({ x : d3.timeParse("%Y-%m-%d")(data[index].dates[i]), y : data[index].avg_deaths[i] }); 
+    if (index >= 0) {
+      for(var i = 0; i < data[index].dates.length; i++){
+        //pushes date and value into array, similar to x, y coordinates on a graph
+        dataset.push({ x : d3.timeParse("%Y-%m-%d")(data[index].dates[i]), y : data[index].avg_deaths[i] });
+      }
     }
   }
   else if(selectedIndex == 'Current Hospitalizations'){
     var index = data.findIndex(obj => obj.state==state);
-    for(var i = 0; i < data[index].hospDates.length; i++){
-      //pushes date and value into array, similar to x, y coordinates on a graph
-      dataset.push({ x : d3.timeParse("%Y-%m-%d")(data[index].hospDates[i]), y : data[index].avg_hospitalizations[i] }); 
+    if (index >= 0) {
+      for(var i = 0; i < data[index].hospDates.length; i++){
+        //pushes date and value into array, similar to x, y coordinates on a graph
+        dataset.push({ x : d3.timeParse("%Y-%m-%d")(data[index].hospDates[i]), y : data[index].avg_hospitalizations[i] });
+      }
     }
   }
 
@@ -700,11 +706,11 @@ function populate(x, y, state, color, selectedIndex, data){
     .domain(d3.extent(dataset, function(d) { return d.x; }))
     .range([0,w]); //taking into account margins
 
-  // setting linear scale for y axis based on max value 
+  // setting linear scale for y axis based on max value
   var yScale = d3.scaleLinear()
     .domain([0, d3.max(dataset, function (d) { return d.y + 1; })])
     .range([h, margin.top]);
-    
+
   var xAxis = d3.axisBottom(xScale).tickValues([]).tickSizeOuter(0);
   var yAxis = d3.axisLeft(yScale).tickValues([]);
 
@@ -719,7 +725,7 @@ function populate(x, y, state, color, selectedIndex, data){
     .attr("stroke-width", 1)
     .attr("transform", "translate(" + [x+margin.left*2,y+margin.top*2] + ")")  //translate line based on x and y position
     .attr("d", line)
-      
+
   const area = d3.area()
     .x(function(d) { return xScale(d.x); })
     .y0(h)
@@ -733,7 +739,7 @@ function populate(x, y, state, color, selectedIndex, data){
     .attr("opacity", "0.2")
     .attr("cursor", "pointer")
     .on("click", function(d) {
-        popUpGraph(state, color, selectedIndex, data);   
+        popUpGraph(state, color, selectedIndex, data);
     })
     .attr("d", area);
 }
