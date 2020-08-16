@@ -5,15 +5,21 @@
 // resources: https://bl.ocks.org/officeofjane/2c3ed88c4be050d92765de912d71b7c4 for US grid
 
 
-var csv_arr = []; //global array to hold certain state and color values from csv file
-fillArr();  //populates csv array [{state, color},{state, color}, {state, color},...]
+var colormap = new Map(); //global map to hold certain state and color values from csv file
+var popmap = new Map(); //global map to hold state population values
+var statescales = new Map(); //global map to hold state population values
+loadmaps();  //populates csv array [{state, color},{state, color}, {state, color},...]
 
-var selectOptions = ["Daily New Cases", "Daily New Deaths", "Current Hospitalizations"]
+var selectOptions = new Map([
+    ["Daily New Cases", ["new_cases","avg_cases"]],
+    ["Daily New Deaths", ["new_deaths","avg_deaths"]],
+    ["Current Hospitalizations", ["new_hospitalizations","avg_hospitalizations"]]
+                    ]);
 
 // add the options to the button
 d3.select("#selectButton")
   .selectAll('myOptions')
-  .data(selectOptions)
+  .data(Array.from(selectOptions.keys()))
   .enter()
   .append('option')
   .text(function (d) { return d; }) // text showed in the menu
@@ -121,6 +127,7 @@ function ready(error, data, links, jsonData, selectedIndex) {
     // filter data to return the object of publication of interest
     var selectPub = nest.find(function(d) {
       return d.key == publication;
+    }
   });
 
   // use a key function to bind rects to states
@@ -132,7 +139,7 @@ function ready(error, data, links, jsonData, selectedIndex) {
     .append("rect")
     .attr("class", function(d) {
       if(selectedIndex == 'Current Hospitalizations' && (d.state == 'Florida' || d.state == 'Kansas' || d.state == 'Hawaii')){
-     // if(selectedIndex == 'Current Hospitalizations' && (d.state == 'Kansas' || d.state == 'Hawaii')){
+     // if(selectedIndex == 'Current Hospitalizations' && (d.state == 'Kansas' || d.state == 'Hawaii'))
         var square = d3.select(this);
         square.style("fill", "#f2f2f3")
       }
@@ -148,8 +155,8 @@ function ready(error, data, links, jsonData, selectedIndex) {
       square.classed("active", !square.classed("active"));
       if (square.classed("active")) {
         if(selectedIndex != 'Current Hospitalizations' || (d.state != 'Florida' && d.state != 'Kansas' && d.state != 'Hawaii')){
-        //if(selectedIndex == 'Current Hospitalizations' && (d.state == 'Kansas' || d.state == 'Hawaii')){
-          let color = getColor(d.state); //determines appropriate color based on id
+        //if(selectedIndex == 'Current Hospitalizations' && (d.state == 'Kansas' || d.state == 'Hawaii'))
+          let color = colormap.get(d.state); //determines appropriate color based on id
           popUpGraph(d.state, color, selectedIndex, jsonData);
         }
       }
@@ -195,7 +202,7 @@ function ready(error, data, links, jsonData, selectedIndex) {
     })
     .text(function(d) {
       if(selectedIndex == 'Current Hospitalizations' && (d.state == 'Florida' || d.state == 'Kansas' || d.state == 'Hawaii')){
-      //if(selectedIndex == 'Current Hospitalizations' && (d.state == 'Kansas' || d.state == 'Hawaii')){
+      //if(selectedIndex == 'Current Hospitalizations' && (d.state == 'Kansas' || d.state == 'Hawaii'))
         return "Not";
       }
       else return;
@@ -232,31 +239,19 @@ function ready(error, data, links, jsonData, selectedIndex) {
   var map = gridMap.selectAll(".map")
     .data(selectPub.values, function(d) { return d.code; });
 
-  var maxyval = getmaxyval(selectedIndex,jsonData);
+  getmaxyval(selectedIndex,jsonData);
 
   // graphs for each state
   map.enter()
     .append("svg")
       .attr("stateMap", function(d) {
-        var color = getColor(d.state); //determines appropriate color based on preloaded csv file
+        var color = colormap.get(d.state); //determines appropriate color based on preloaded csv file
         x = ((d.col - 1) * cellSize);
         y = ((d.row - 1) * cellSize);
         populate(x, y, d.state, color, selectedIndex, jsonData, maxyval);
       })
   }
 };
-
-/*
-* getColor: determines corresponding color based on the id given. If there is a change
-*           in color, it returns the changed color, else returns the old color
-*/
-function getColor(state){
-  for(var i = 0; i < csv_arr.length; i ++){
-    if(csv_arr[i][0] == state){ //find correct province/state
-        return csv_arr[i][1];   //return color
-      }
-  }
-}
 
 /*
 * popUpGraph: takes in stateName and generates Modal with graph of
@@ -593,13 +588,18 @@ var yAxis = d3.axisLeft()
 }
 
 /*
-* fillArr: reads csv file and populates csv_arr with all id, change, and old color values.
+* loadmaps: reads csv files and populates colormap and popmap
 *          *This process of preloading is to get around the asynchronous javascript process*
 */
-function fillArr(){
-    d3.csv("USStateColors.csv", function(data) {
-    for(var i = 0; i < data.length; i++){
-      csv_arr.push([data[i].state, data[i].color]);
+function loadmaps(){
+  d3.csv("USStateColors.csv", function(data) {
+    for(var i = 0; i < data.length; i++) {
+      colormap.set(data[i].state, data[i].color);
+    }
+  });
+  d3.csv("USStatePop.csv", function(data) {
+    for(var i = 0; i < data.length; i++) {
+      popmap.set(data[i].state, data[i].population);
     }
   });
 }
@@ -663,33 +663,25 @@ function calcCellSize(w, h, ncol, nrow) {
   return cellSize;
 }
 
+/*
+ * calculate the largest count per population of that state
+ * This value times the population of the state should be the max y value for
+ * the state
+ */
 function getmaxyval(selectedIndex, data) {
-  var maxyval=0;
-  if(selectedIndex == 'Daily New Cases'){
-    data.forEach(function(d) {
-      var maxystate = Math.max(...d.avg_cases);
-      if (maxyval < maxystate) {
-        maxyval = maxystate;
-      }
-    });
-  }
-  else if(selectedIndex == 'Daily New Deaths'){
-    data.forEach(function(d) {
-      var maxystate = Math.max(...d.avg_deaths);
-      if (maxyval < maxystate) {
-        maxyval = maxystate;
-      }
-    });
-  }
-  else if(selectedIndex == 'Current Hospitalizations'){
-    data.forEach(function(d) {
-      var maxystate = Math.max(...d.avg_hospitalizations);
-      if (maxyval < maxystate) {
-        maxyval = maxystate;
-      }
-    });
-  }
-  return maxyval;
+  var usmaxcountperpop=0;
+  data.forEach(function(state_data) {
+    var maxcount = Math.max(...state_data[selectOptions.get(selectedIndex)[1]]);
+    var pop = popmap.get(state_data.state);
+    var maxcountperpop=maxcount/pop;
+    if (usmaxcountperpop < maxcountperpop) {
+      usmaxcountperpop = maxcountperpop;
+    }
+  });
+  data.forEach(function(state_data) {
+    var maxcount = Math.max(...state_data[selectOptions.get(selectedIndex)[1]]);
+    /* TODO: determine state weighting */
+  });
 }
 
 /*
