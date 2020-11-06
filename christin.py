@@ -58,26 +58,23 @@ with open('christin.csv', newline='') as csvfile:
     state_name=row[headers["State"]]
     if not state_name in state_set:
       next
-    if state_name in state_data:
-      state_dict = state_data[state_name]
-      for col in range(firstdate,len(headers)-1):
-        try:
-          state_dict["new_cases"][col-firstdate] += float(row[col])
-          state_dict["avg_cases"][col-firstdate] += float(row[col])
-        except:
-          pass
-    else:
+    if not state_name in state_data:
       state_dict = {"state":state_name, "dates": [], "new_cases": [], "avg_cases": [], "new_deaths": [], "avg_deaths": [], "hospDates": [], "new_hospitalizations": [], "avg_hospitalizations": []}
       state_data[state_name] = state_dict
       json_out.append(state_dict)
       for col in range(firstdate,len(headers)):
         state_dict["dates"].append(header_row[col])
-        try:
-          state_dict["new_cases"].append(float(row[col]))
-          state_dict["avg_cases"].append(float(row[col]))
-        except:
-          pass
+        state_dict["new_cases"].append(float(0))
+        state_dict["avg_cases"].append(float(0))
+    else:
+      state_dict = state_data[state_name]
+    for col in range(firstdate,len(headers)-1):
+      try:
+        state_dict["new_cases"][col-firstdate] += float(row[col])
+        state_dict["avg_cases"][col-firstdate] += float(row[col])
+      except:
+        break
 
 # Write as json
 with open('result.json', 'w') as fp:
-    json.dump(json_out, fp)
+    json.dump(json_out, fp, indent=2, sort_keys=True)
