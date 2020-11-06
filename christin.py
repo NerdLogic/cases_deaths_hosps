@@ -63,6 +63,7 @@ with open('christin.csv', newline='') as csvfile:
       for col in range(firstdate,len(headers)-1):
         try:
           state_dict["new_cases"][col-firstdate] += float(row[col])
+          state_dict["avg_cases"][col-firstdate] += float(row[col])
         except:
           pass
     else:
@@ -73,6 +74,7 @@ with open('christin.csv', newline='') as csvfile:
         state_dict["dates"].append(header_row[col])
         try:
           state_dict["new_cases"].append(float(row[col]))
+          state_dict["avg_cases"].append(float(row[col]))
         except:
           pass
 
