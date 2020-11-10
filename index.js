@@ -351,7 +351,7 @@ var yAxis = d3.axisLeft()
   g_svg.append("g")
       .attr("class", "x axis")
       .attr("transform", "translate("+padding*0.5+"," + h + ")")
-      .call(xAxis.ticks(6).tickSize(0));
+      .call(xAxis.ticks(width/200+2).tickFormat(d3.timeFormat("%B-%y")).tickSize(0));
      // .call(xAxis);
 
   g_svg.append("g")
