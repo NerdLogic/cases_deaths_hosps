@@ -45,15 +45,16 @@ state_data = {}
 
 json_out = []
 
-with open('christin.csv', newline='') as csvfile:
-  csvreader = csv.reader(csvfile, delimiter="\t")
+with open('State_sums_w_full_hrfixed.csv', newline='') as csvfile:
+  #csvreader = csv.reader(csvfile, delimiter="\t")
+  csvreader = csv.reader(csvfile)
   column = 0
   headers = {}
   header_row = next(csvreader)
   for header in header_row:
     headers[header]=column
     column+=1
-  firstdate = headers["County"]+1
+  firstdate = headers["State"]+1
   for row in csvreader:
     state_name=row[headers["State"]]
     if not state_name in state_set:
